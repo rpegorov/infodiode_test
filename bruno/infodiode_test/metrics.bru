@@ -1,0 +1,16 @@
+meta {
+  name: metrics
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{serv}}/metrics
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

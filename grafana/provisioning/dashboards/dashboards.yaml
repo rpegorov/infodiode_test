@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: "InfoDiode"
+    orgId: 1
+    folder: "InfoDiode"
+    folderUid: "infodiode"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

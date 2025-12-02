@@ -1,0 +1,50 @@
+# Глобальные настройки Prometheus
+global:
+  scrape_interval: 15s # Интервал сбора метрик
+  evaluation_interval: 15s # Интервал оценки правил
+  external_labels:
+    monitor: "infodiode-monitor"
+
+# Настройки Alertmanager (опционально)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+# Правила для алертов (опционально)
+rule_files:
+  # - "alert_rules.yml"
+
+# Конфигурация источников метрик
+scrape_configs:
+  # Метрики самого Prometheus
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Метрики sender сервиса
+  - job_name: "sender"
+    static_configs:
+      - targets: ["sender-service:8080"]
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    scheme: http
+
+  # Метрики recipient сервиса
+  - job_name: "recipient"
+    static_configs:
+      - targets: ["recipient-service:8081"]
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    scheme: http
+
+  # Метрики MQTT брокера отключены - Mosquitto не предоставляет метрики Prometheus
+  # - job_name: 'mosquitto'
+  #   static_configs:
+  #     - targets: ['mqtt-broker:1883']
+  #   metrics_path: '/metrics'
+  #   scrape_interval: 30s
+  #   scrape_timeout: 10s
+  #   scheme: http

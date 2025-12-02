@@ -1,0 +1,22 @@
+meta {
+  name: generate
+  type: http
+  seq: 10
+}
+
+post {
+  url: {{serv}}/generate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "type": "all"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

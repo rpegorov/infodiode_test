@@ -1,0 +1,167 @@
+{
+  "batch_test_mqtt": {
+    "description": "Пакетный тест через MQTT брокер",
+    "method": "POST",
+    "url": "http://localhost:8080/test/batch",
+    "body": {
+      "protocol": "mqtt",
+      "thread_count": 50,
+      "packet_size": 1048576,
+      "total_messages": 10000,
+      "duration": 60
+    }
+  },
+  "batch_test_tcp": {
+    "description": "Пакетный тест через TCP соединение",
+    "method": "POST",
+    "url": "http://localhost:8080/test/batch",
+    "body": {
+      "protocol": "tcp",
+      "thread_count": 50,
+      "packet_size": 1048576,
+      "total_messages": 10000,
+      "duration": 60
+    }
+  },
+  "stream_test_mqtt": {
+    "description": "Потоковый тест через MQTT (100 msg/sec)",
+    "method": "POST",
+    "url": "http://localhost:8080/test/stream",
+    "body": {
+      "protocol": "mqtt",
+      "messages_per_sec": 100,
+      "packet_size": 102400,
+      "duration": 60
+    }
+  },
+  "stream_test_tcp": {
+    "description": "Потоковый тест через TCP (1000 msg/sec)",
+    "method": "POST",
+    "url": "http://localhost:8080/test/stream",
+    "body": {
+      "protocol": "tcp",
+      "messages_per_sec": 1000,
+      "packet_size": 102400,
+      "duration": 60
+    }
+  },
+  "large_test_mqtt": {
+    "description": "Тест с большими пакетами через MQTT (10MB)",
+    "method": "POST",
+    "url": "http://localhost:8080/test/large",
+    "body": {
+      "protocol": "mqtt",
+      "thread_count": 10,
+      "packet_size_mb": 10,
+      "duration": 120
+    }
+  },
+  "large_test_tcp": {
+    "description": "Тест с большими пакетами через TCP (50MB)",
+    "method": "POST",
+    "url": "http://localhost:8080/test/large",
+    "body": {
+      "protocol": "tcp",
+      "thread_count": 5,
+      "packet_size_mb": 50,
+      "duration": 120
+    }
+  },
+  "stop_test": {
+    "description": "Остановка текущего теста",
+    "method": "POST",
+    "url": "http://localhost:8080/test/stop",
+    "body": {}
+  },
+  "get_stats": {
+    "description": "Получение статистики",
+    "method": "GET",
+    "url": "http://localhost:8080/stats"
+  },
+  "health_check": {
+    "description": "Проверка состояния сервиса",
+    "method": "GET",
+    "url": "http://localhost:8080/health"
+  },
+  "performance_comparison": {
+    "description": "Сравнительные тесты производительности MQTT vs TCP",
+    "tests": [
+      {
+        "name": "Маленькие пакеты MQTT",
+        "protocol": "mqtt",
+        "thread_count": 25,
+        "packet_size": 102400,
+        "total_messages": 100000,
+        "duration": 60
+      },
+      {
+        "name": "Маленькие пакеты TCP",
+        "protocol": "tcp",
+        "thread_count": 25,
+        "packet_size": 102400,
+        "total_messages": 100000,
+        "duration": 60
+      },
+      {
+        "name": "Средние пакеты MQTT",
+        "protocol": "mqtt",
+        "thread_count": 50,
+        "packet_size": 1048576,
+        "total_messages": 10000,
+        "duration": 60
+      },
+      {
+        "name": "Средние пакеты TCP",
+        "protocol": "tcp",
+        "thread_count": 50,
+        "packet_size": 1048576,
+        "total_messages": 10000,
+        "duration": 60
+      },
+      {
+        "name": "Большие пакеты MQTT",
+        "protocol": "mqtt",
+        "thread_count": 10,
+        "packet_size_mb": 5,
+        "total_messages": 100,
+        "duration": 60
+      },
+      {
+        "name": "Большие пакеты TCP",
+        "protocol": "tcp",
+        "thread_count": 10,
+        "packet_size_mb": 5,
+        "total_messages": 100,
+        "duration": 60
+      }
+    ]
+  },
+  "stress_test_tcp": {
+    "description": "Стресс-тест TCP с максимальной нагрузкой",
+    "scenarios": [
+      {
+        "name": "Максимальное количество потоков",
+        "protocol": "tcp",
+        "thread_count": 100,
+        "packet_size": 524288,
+        "total_messages": 50000,
+        "duration": 300
+      },
+      {
+        "name": "Максимальная частота отправки",
+        "protocol": "tcp",
+        "messages_per_sec": 10000,
+        "packet_size": 102400,
+        "duration": 60
+      },
+      {
+        "name": "Максимальный размер пакетов",
+        "protocol": "tcp",
+        "thread_count": 5,
+        "packet_size_mb": 100,
+        "total_messages": 10,
+        "duration": 120
+      }
+    ]
+  }
+}

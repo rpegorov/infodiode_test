@@ -1,0 +1,25 @@
+meta {
+  name: stream
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{serv}}/test/stream
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "thread_count": 50,
+      "messages_per_sec": 10000,
+      "packet_size": 950,
+      "duration": 6000
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

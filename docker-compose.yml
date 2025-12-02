@@ -1,0 +1,135 @@
+services:
+  # MQTT Broker (Mosquitto)
+  mosquitto:
+    image: eclipse-mosquitto:2.0.18
+    container_name: mqtt-broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883" # MQTT port
+      - "9001:9001" # WebSocket port (optional)
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    environment:
+      - MQTT_BROKER_LOG_TYPE=all
+      - MQTT_BROKER_LOG_DEST=stdout
+    networks:
+      - infodiode-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Sender service (для локального тестирования)
+  sender:
+    build:
+      context: .
+      dockerfile: sender/Dockerfile
+    container_name: sender-service
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # HTTP API port
+    volumes:
+      - ./sender/config.docker.yaml:/app/config.yaml
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - SENDER_MQTT_BROKER=tcp://mosquitto:1883
+      - SENDER_SERVICE_NAME=sender
+      - SENDER_HTTP_PORT=8080
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks:
+      - infodiode-net
+    profiles:
+      - full
+
+  # Recipient service (для локального тестирования)
+  recipient:
+    build:
+      context: .
+      dockerfile: recipient/Dockerfile
+    container_name: recipient-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081" # Metrics port
+    volumes:
+      - ./recipient/config.docker.yaml:/app/config.yaml
+      - ./logs:/app/logs
+    environment:
+      - RECIPIENT_MQTT_BROKER=tcp://mosquitto:1883
+      - RECIPIENT_SERVICE_NAME=recipient
+      - RECIPIENT_METRICS_PORT=8081
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    networks:
+      - infodiode-net
+    profiles:
+      - full
+
+  # Prometheus для мониторинга (опционально)
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    networks:
+      - infodiode-net
+    profiles:
+      - monitoring
+
+  # Grafana для визуализации (опционально)
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - infodiode-net
+    profiles:
+      - monitoring
+
+networks:
+  infodiode-net:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

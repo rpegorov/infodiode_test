@@ -1,0 +1,25 @@
+meta {
+  name: batch
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{serv}}/test/batch
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "thread_count": 200,
+      "packet_size": 5000,
+      "total_messages": 10000,
+      "duration": 60
+    }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

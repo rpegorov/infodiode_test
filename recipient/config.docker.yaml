@@ -1,0 +1,87 @@
+# Конфигурация recipient сервиса для Docker окружения
+
+service:
+  name: recipient
+  version: 1.0.0
+
+# Настройки MQTT брокера
+mqtt:
+  broker: tcp://mosquitto:1883 # Адрес MQTT брокера в Docker сети
+  client_id: recipient-001 # Уникальный ID клиента
+  username: "" # Имя пользователя (если требуется)
+  password: "" # Пароль (если требуется)
+  topic: test/messages # Топик для подписки на сообщения
+  qos: 1 # Quality of Service: 0 (at most once), 1 (at least once), 2 (exactly once)
+  clean_session: false # Сохранять состояние сессии при переподключении
+  keep_alive: 60s # Интервал keep-alive пингов
+  connect_timeout: 30s # Таймаут подключения к брокеру
+  max_reconnect_interval: 10m # Максимальный интервал между попытками переподключения
+  auto_reconnect: true # Автоматическое переподключение при потере связи
+  order_matters: true # Сохранять порядок сообщений
+  store_directory: /tmp/mqtt-recipient-store # Директория для хранения сообщений при отсутствии связи
+  max_buffered_messages: 10000 # Максимальное количество буферизованных сообщений
+
+# Настройки TCP сервера
+tcp:
+  enabled: true # Включить TCP сервер для приема данных
+  address: :9999 # Адрес для прослушивания (host:port)
+  max_connections: 100 # Максимальное количество одновременных подключений
+  read_timeout: 60s # Таймаут чтения данных
+  write_timeout: 60s # Таймаут записи данных
+  keep_alive: true # Использовать TCP keep-alive
+  keep_alive_period: 30s # Период отправки keep-alive пакетов
+
+# Настройки обработки сообщений
+processing:
+  batch_size: 100 # Размер батча для обработки
+  batch_timeout: 5s # Максимальное время ожидания заполнения батча
+  worker_count: 10 # Количество воркеров для обработки
+  max_retries: 3 # Максимальное количество повторов при ошибке
+  retry_delay: 1s # Задержка между повторами
+
+# Настройки хранилища
+storage:
+  type: none # none, file, database
+  file_path: data/received # Путь для сохранения файлов
+  file_format: jsonl # json, jsonl, csv
+  max_file_size: 100 # MB
+  compression: false # Сжимать ли сохраняемые файлы
+
+# Настройки логирования
+logger:
+  level: info # debug, info, warn, error
+  file_path: logs/recipient.log
+  max_size: 100 # MB
+  max_backups: 5
+  max_age: 30 # days
+  compress: true
+  console: true # также выводить в консоль
+
+# Настройки HTTP сервера для метрик
+http:
+  host: 0.0.0.0
+  port: 8081
+  read_timeout: 30s
+  write_timeout: 30s
+  shutdown_timeout: 10s
+
+# Настройки метрик
+metrics:
+  enabled: true
+  path: /metrics
+  export_interval: 10s # Интервал экспорта метрик
+  percentiles: [0.5, 0.9, 0.95, 0.99] # Персентили для histogram метрик
+
+# Настройки валидации данных
+validation:
+  enabled: true
+  check_schema: true # Проверять схему входящих сообщений
+  check_duplicates: true # Проверять дубликаты по ID сообщения
+  duplicate_window: 1h # Окно для проверки дубликатов
+  max_message_size: 10485760 # 10MB - максимальный размер одного сообщения
+
+# Настройки мониторинга производительности
+performance:
+  measure_latency: true # Измерять задержку обработки
+  measure_throughput: true # Измерять пропускную способность
+  report_interval: 60s # Интервал отчетов о производительности

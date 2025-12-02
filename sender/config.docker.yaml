@@ -1,0 +1,80 @@
+# Конфигурация sender сервиса для Docker окружения
+
+service:
+  name: sender
+  version: 1.0.0
+
+# Настройки MQTT брокера
+mqtt:
+  broker: tcp://mosquitto:1883 # Адрес MQTT брокера в Docker сети
+  client_id: sender-001 # Уникальный ID клиента
+  username: "" # Имя пользователя (если требуется)
+  password: "" # Пароль (если требуется)
+  topic: test/messages # Топик для публикации сообщений
+  qos: 1 # Quality of Service: 0 (at most once), 1 (at least once), 2 (exactly once)
+  retained: false # Не сохранять последнее сообщение на брокере
+  clean_session: false # Сохранять состояние сессии при переподключении
+  keep_alive: 60s # Интервал keep-alive пингов
+  connect_timeout: 30s # Таймаут подключения к брокеру
+  max_reconnect_interval: 10m # Максимальный интервал между попытками переподключения
+  auto_reconnect: true # Автоматическое переподключение при потере связи
+  order_matters: true # Сохранять порядок сообщений
+  store_directory: /tmp/mqtt-sender-store # Директория для хранения сообщений при отсутствии связи
+  max_buffered_messages: 10000 # Максимальное количество буферизованных сообщений
+
+# Настройки TCP клиента
+tcp:
+  enabled: true # Включить поддержку TCP протокола
+  address: recipient-service:9999 # Адрес TCP сервера (host:port)
+  reconnect_interval: 5s # Интервал между попытками переподключения
+  max_retries: 3 # Максимальное количество попыток переподключения
+  timeout: 10s # Таймаут операций чтения/записи
+  keep_alive: true # Использовать TCP keep-alive
+  keep_alive_period: 30s # Период отправки keep-alive пакетов
+
+# Настройки логирования
+logger:
+  level: info # debug, info, warn, error
+  file_path: logs/sender.log
+  max_size: 100 # MB
+  max_backups: 5
+  max_age: 30 # days
+  compress: true
+  console: true # также выводить в консоль
+
+# Настройки генератора данных
+data:
+  data_path: data
+  generator_seed: 42 # для воспроизводимости результатов
+  indicator_id_range: [1, 1000]
+  equipment_id_range: [1, 100]
+  # Распределение типов значений indicator_value (сумма должна быть 100%)
+  null_percent: 10.0
+  bool_percent: 20.0
+  float_percent: 40.0
+  string_percent: 30.0
+  # Размеры батчей для генерации
+  small_batch_size: 1000 # для пакетов ~100KB
+  medium_batch_size: 10000 # для пакетов ~1MB
+  large_batch_sizes: [5, 10, 50, 100] # MB
+
+# Настройки HTTP сервера
+http:
+  host: 0.0.0.0
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+  shutdown_timeout: 10s
+
+# Настройки метрик
+metrics:
+  enabled: true
+  path: /metrics
+
+# Параметры тестирования
+tests:
+  batch_threads: [25, 50, 100] # количество потоков для пакетной отправки
+  stream_rates: [100, 1000, 5000, 10000] # сообщений в секунду для потоковой отправки
+  large_sizes: [5, 10, 50, 100] # размеры больших пакетов в MB
+  default_duration: 60s # продолжительность теста по умолчанию
+  max_test_duration: 3600s # максимальная продолжительность теста

@@ -1,0 +1,24 @@
+meta {
+  name: large
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{serv}}/test/large
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+      "thread_count": 50,
+      "packet_size_mb": 100,
+      "duration": 10
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
