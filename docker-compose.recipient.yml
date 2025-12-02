@@ -10,8 +10,8 @@ services:
     container_name: mqtt-broker-recipient
     restart: unless-stopped
     ports:
-      - "1883:1883"  # MQTT port
-      - "9001:9001"  # WebSocket port (optional)
+      - "1883:1883" # MQTT port
+      - "9001:9001" # WebSocket port (optional)
     volumes:
       - ./mosquitto/config/mosquitto-recipient.conf:/mosquitto/config/mosquitto.conf
       - ./mosquitto/data:/mosquitto/data
@@ -22,11 +22,25 @@ services:
     networks:
       - recipient-net
     healthcheck:
-      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    profiles:
+      - broker
 
   # Recipient service
   recipient:
@@ -36,7 +50,7 @@ services:
     container_name: recipient-service
     restart: unless-stopped
     ports:
-      - "8081:8081"  # Metrics and health check port
+      - "8081:8081" # Metrics and health check port
     volumes:
       - ./recipient/config.yaml:/app/config.yaml
       - ./logs/recipient:/app/logs
