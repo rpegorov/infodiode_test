@@ -62,9 +62,6 @@ services:
       - RECIPIENT_METRICS_PORT=8081
       - RECIPIENT_LOGGER_LEVEL=${LOG_LEVEL:-info}
       - TZ=${TZ:-UTC}
-    depends_on:
-      mosquitto-recipient:
-        condition: service_healthy
     networks:
       - recipient-net
     labels:
