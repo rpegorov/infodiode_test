@@ -31,8 +31,8 @@ services:
   # Sender service
   sender:
     build:
-      context: ./sender
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: sender/Dockerfile
     container_name: sender-service
     restart: unless-stopped
     ports:

@@ -45,8 +45,8 @@ services:
   # Recipient service
   recipient:
     build:
-      context: ./recipient
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: recipient/Dockerfile
     container_name: recipient-service
     restart: unless-stopped
     ports:
