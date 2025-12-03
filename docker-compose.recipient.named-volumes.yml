@@ -1,0 +1,232 @@
+version: "3.8"
+
+# Docker Compose для машины-приемника (recipient) с именованными volumes
+# Использует именованные volumes вместо bind mounts для решения проблем с правами доступа
+
+services:
+  # MQTT Broker для recipient
+  mosquitto-recipient:
+    image: eclipse-mosquitto:2.0.18
+    container_name: mqtt-broker-recipient
+    restart: unless-stopped
+    ports:
+      - "1883:1883" # MQTT port
+      - "9001:9001" # WebSocket port (optional)
+    volumes:
+      - ./mosquitto/config/mosquitto-recipient.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    environment:
+      - MQTT_BROKER_LOG_TYPE=all
+      - MQTT_BROKER_LOG_DEST=stdout
+    networks:
+      - recipient-net
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-i",
+          "healthcheck",
+          "-W",
+          "3",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - broker
+
+  # Recipient service
+  recipient:
+    build:
+      context: .
+      dockerfile: recipient/Dockerfile
+    container_name: recipient-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081" # Metrics and health check port
+    volumes:
+      - ./recipient/config.yaml:/app/config.yaml:ro
+      - recipient-logs:/app/logs
+      - mqtt-recipient-store:/tmp/mqtt-recipient-store
+    environment:
+      - RECIPIENT_MQTT_BROKER=tcp://mosquitto-recipient:1883
+      - RECIPIENT_MQTT_CLIENT_ID=recipient-${HOSTNAME:-001}
+      - RECIPIENT_SERVICE_NAME=recipient
+      - RECIPIENT_METRICS_PORT=8081
+      - RECIPIENT_LOGGER_LEVEL=${LOG_LEVEL:-info}
+      - TZ=${TZ:-UTC}
+    networks:
+      - recipient-net
+    labels:
+      - "prometheus.io/scrape=true"
+      - "prometheus.io/port=8081"
+      - "prometheus.io/path=/metrics"
+
+  # Prometheus для локального мониторинга recipient
+  prometheus-recipient:
+    image: prom/prometheus:v2.45.0
+    container_name: prometheus-recipient
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus-recipient.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-recipient-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+      - "--web.enable-admin-api"
+    networks:
+      - recipient-net
+    profiles:
+      - monitoring
+
+  # Grafana для визуализации метрик recipient
+  grafana-recipient:
+    image: grafana/grafana:10.0.0
+    container_name: grafana-recipient
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-recipient-data:/var/lib/grafana
+      - ./grafana/provisioning/recipient:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=redis-datasource
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    depends_on:
+      - prometheus-recipient
+    networks:
+      - recipient-net
+    profiles:
+      - monitoring
+
+  # Node Exporter для мониторинга системы
+  node-exporter-recipient:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter-recipient
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    networks:
+      - recipient-net
+    profiles:
+      - monitoring
+
+  # PostgreSQL для хранения обработанных данных (опционально)
+  postgres-recipient:
+    image: postgres:15-alpine
+    container_name: postgres-recipient
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-recipient-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-infodiode_db}
+      - POSTGRES_USER=${POSTGRES_USER:-infodiode}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-secure_password}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    networks:
+      - recipient-net
+    profiles:
+      - storage
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-infodiode}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Adminer для управления БД (опционально)
+  adminer-recipient:
+    image: adminer:4.8.1
+    container_name: adminer-recipient
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres-recipient
+      - ADMINER_DESIGN=pepa-linha
+    depends_on:
+      - postgres-recipient
+    networks:
+      - recipient-net
+    profiles:
+      - storage
+
+  # Log viewer service для просмотра логов (опционально)
+  log-viewer:
+    image: amir20/dozzle:latest
+    container_name: log-viewer-recipient
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - recipient-logs:/logs:ro
+    environment:
+      - DOZZLE_LEVEL=info
+      - DOZZLE_TAILSIZE=300
+      - DOZZLE_FILTER=name=recipient*
+    networks:
+      - recipient-net
+    profiles:
+      - monitoring
+
+networks:
+  recipient-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+volumes:
+  # Named volumes для данных - Docker сам управляет правами доступа
+  prometheus-recipient-data:
+    driver: local
+  grafana-recipient-data:
+    driver: local
+  postgres-recipient-data:
+    driver: local
+
+  # Named volumes для логов и временных файлов
+  recipient-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${PWD}/logs/recipient
+
+  mqtt-recipient-store:
+    driver: local
+
+  mosquitto-data:
+    driver: local
+
+  mosquitto-log:
+    driver: local
