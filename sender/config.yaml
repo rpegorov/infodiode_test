@@ -6,7 +6,7 @@ service:
 
 # Настройки MQTT брокера
 mqtt:
-  broker: tcp://localhost:1883 # Адрес MQTT брокера
+  broker: tcp://10.0.141.126:1883 # Адрес MQTT брокера
   client_id: sender-001 # Уникальный ID клиента
   username: "" # Имя пользователя (если требуется)
   password: "" # Пароль (если требуется)

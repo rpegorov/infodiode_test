@@ -27,7 +27,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
+    profiles:
+      - broker
+      
   # Sender service
   sender:
     build:
@@ -49,9 +51,6 @@ services:
       - SENDER_HTTP_PORT=8080
       - SENDER_LOGGER_LEVEL=${LOG_LEVEL:-info}
       - TZ=${TZ:-UTC}
-    depends_on:
-      mosquitto-sender:
-        condition: service_healthy
     networks:
       - sender-net
     extra_hosts:
