@@ -24,7 +24,7 @@ mqtt:
 
 # Настройки TCP клиента
 tcp:
-  enabled: true # Включить поддержку TCP протокола
+  enabled: false # Включить поддержку TCP протокола
   address: localhost:9999 # Адрес TCP сервера (host:port)
   reconnect_interval: 5s # Интервал между попытками переподключения
   max_retries: 3 # Максимальное количество попыток переподключения
