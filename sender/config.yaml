@@ -8,8 +8,8 @@ service:
 mqtt:
   broker: tcp://10.0.141.126:1883 # Адрес MQTT брокера
   client_id: sender-001 # Уникальный ID клиента
-  username: "" # Имя пользователя (если требуется)
-  password: "" # Пароль (если требуется)
+  username: "DM" # Имя пользователя (если требуется)
+  password: "DM" # Пароль (если требуется)
   topic: test/messages # Топик для публикации сообщений
   qos: 1 # Quality of Service: 0 (at most once), 1 (at least once), 2 (exactly once)
   retained: false # Не сохранять последнее сообщение на брокере
